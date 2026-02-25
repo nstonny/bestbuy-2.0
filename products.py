@@ -40,8 +40,45 @@ class Product:
             raise Exception("This product is not active")
         if quantity <= 0:
             raise ValueError("Quantity must be positive")
-
         total_price = quantity * self._price
         self.set_quantity(self._quantity-quantity)
         return total_price
+
+class NonStockedProduct(Product):
+
+    def __init__(self, name, price):
+        # Always initialize with quantity = 0
+        super().__init__(name, price, 0)
+
+    def set_quantity(self, quantity):
+        if self._quantity != 0:
+            raise Exception("Non-stocked products must always have quantity 0")
+        super().set_quantity = 0
+
+    def buy(self, quantity):
+        if not self._active:
+            raise Exception("This product is not active")
+        # no quantity tracking needed
+        total_price = quantity * self._price
+        return total_price
+
+    def show(self):
+        return f"{self._name}, Price: {self._price} (Non-stocked product)"
+
+class LimitedProduct(Product):
+
+    def __init__(self, name, price, quantity, maximum):
+        super().__init__(name, price, quantity)
+        if maximum <= 0:
+            raise ValueError("Maximum quantity must be positive")
+        self._maximum = maximum
+
+    def buy(self, quantity):
+        if quantity > self._maximum:
+            raise Exception(f"Cannot buy more than {self._maximum} quantity per order")
+        super().buy(quantity)
+
+    def show(self):
+        return (f"{self._name}, Price: {self._price} (Limited product)"
+                f"(Limited to {self._maximum} per order)")
 
