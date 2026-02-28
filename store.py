@@ -20,8 +20,9 @@ class Store:
         for product, quantity in list_of_products_to_buy:
             if product not in self._products:
                 raise Exception("Product not available in store")
-            if quantity > product.get_quantity():
-                raise ValueError("Not enough quantity in store")
+            if product.is_stock_managed():
+                if quantity > product.get_quantity():
+                    raise ValueError("Not enough quantity in store")
 
         total_price = 0
         for product, quantity in list_of_products_to_buy:

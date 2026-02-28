@@ -1,5 +1,8 @@
 class Product:
-
+    """
+    This is the Product class. It contains variables and methods common to
+    all types of products that inherit this class.
+    """
     def __init__(self, name, price, quantity):
         if name == "":
             raise Exception("Product name cannot be empty")
@@ -12,9 +15,13 @@ class Product:
         self._price = price
         self._quantity = quantity
         self._active = True
+        self._promotion = None
 
     def get_quantity(self):
         return self._quantity
+
+    def get_price(self):
+        return self._price
 
     def set_quantity(self, quantity):
         if quantity < 0:
@@ -32,28 +39,57 @@ class Product:
     def deactivate(self):
         self._active = False
 
+    def is_stock_managed(self):
+        return True
+
+    def set_promotion(self, promotion):
+        self._promotion = promotion
+
+    def get_promotion(self):
+        return self._promotion
+
+
     def show(self):
-        return f"{self._name}, Price: {self._price}, Quantity: {self._quantity}"
+        """
+        shows total price including if there is promotion or not.
+        """
+        promo_name = "None"
+        if self._promotion:
+            promo_name = self._promotion.get_name()
+        return f"{self._name}, Price: {self._price}, Quantity: {self._quantity}, Promotion: {promo_name}"
 
     def buy(self, quantity):
+        """
+        validates first, applies promotion calculations, finally returns total price.
+        """
         if not self._active:
             raise Exception("This product is not active")
         if quantity <= 0:
             raise ValueError("Quantity must be positive")
-        total_price = quantity * self._price
+
+        if self._promotion:
+            total_price = quantity * self._promotion.apply_promotion(self, quantity)
+        else:
+            total_price = quantity * self._price
         self.set_quantity(self._quantity-quantity)
         return total_price
 
 class NonStockedProduct(Product):
-
+    """
+    This is the NonStockedProduct class. It inherits the Product class.
+    """
     def __init__(self, name, price):
         # Always initialize with quantity = 0
         super().__init__(name, price, 0)
 
     def set_quantity(self, quantity):
-        if self._quantity != 0:
-            raise Exception("Non-stocked products must always have quantity 0")
-        super().set_quantity = 0
+        raise Exception("Non-stocked products do not support quantity changes.")
+
+    def is_stock_managed(self):
+        """
+        checks if product is stock managed, needed to ignore quantity checks when ordering.
+        """
+        return False
 
     def buy(self, quantity):
         if not self._active:
@@ -63,11 +99,24 @@ class NonStockedProduct(Product):
         return total_price
 
     def show(self):
-        return f"{self._name}, Price: {self._price} (Non-stocked product)"
+        """
+        override method to show the product where quantity needs to be shown as unlimited,
+        since quantity for non-stocked products are stored as 0 internally.
+        """
+        promo_name = "None"
+        if self._promotion:
+            promo_name = self._promotion.get_name()
+        return f"{self._name}, Price: {self._price}, Quantity: Unlimited, Promotion: {promo_name}"
 
 class LimitedProduct(Product):
+    """
+    This is the LimitedProduct class. It inherits the Product class.
+    """
 
     def __init__(self, name, price, quantity, maximum):
+        """
+        :param maximum: represents the quantity requested when ordering. only a maximum number of items of this product can be ordered.
+        """
         super().__init__(name, price, quantity)
         if maximum <= 0:
             raise ValueError("Maximum quantity must be positive")
@@ -75,10 +124,15 @@ class LimitedProduct(Product):
 
     def buy(self, quantity):
         if quantity > self._maximum:
-            raise Exception(f"Cannot buy more than {self._maximum} quantity per order")
+            raise ValueError(f"Error while making order! Only {self._maximum} is allowed from this product!")
         super().buy(quantity)
 
     def show(self):
-        return (f"{self._name}, Price: {self._price} (Limited product)"
-                f"(Limited to {self._maximum} per order)")
+        """
+        shows product details including the maximum quantity that can be ordered.
+        """
+        promo_name = "None"
+        if self._promotion:
+            promo_name = self._promotion.get_name()
+        return f"{self._name}, Price: {self._price}, Limited to 1 per order!, Promotion: {promo_name}"
 
